@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Breast Cancer Prediction System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🔬 Breast Cancer Prediction System</h1>
+            <p class="subtitle">Educational Machine Learning Application</p>
+        </header>
+
+        <!-- Disclaimer Section -->
+        <div class="disclaimer-box">
+            <h3>⚠️ IMPORTANT DISCLAIMER</h3>
+            <p>
+                <strong>This system is strictly for educational purposes and must not be used as a medical diagnostic tool.</strong>
+                This application is designed for learning purposes only. It should never be used for actual medical diagnosis, treatment planning, 
+                or any clinical decision-making. Always consult with qualified healthcare professionals for medical advice.
+            </p>
+        </div>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Left Section: Input Form -->
+            <section class="input-section">
+                <h2>📋 Enter Patient Features</h2>
+                <form id="predictionForm">
+                    <div class="form-group">
+                        <label for="radius_mean">
+                            Radius Mean
+                            <span class="info-icon" title="Mean of distances from center to points on the perimeter (in micrometers)">ℹ️</span>
+                        </label>
+                        <input 
+                            type="number" 
+                            id="radius_mean" 
+                            name="radius_mean" 
+                            step="0.01" 
+                            min="0" 
+                            placeholder="e.g., 13.5" 
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="texture_mean">
+                            Texture Mean
+                            <span class="info-icon" title="Standard deviation of gray-scale values">ℹ️</span>
+                        </label>
+                        <input 
+                            type="number" 
+                            id="texture_mean" 
+                            name="texture_mean" 
+                            step="0.01" 
+                            min="0" 
+                            placeholder="e.g., 19.5" 
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="perimeter_mean">
+                            Perimeter Mean
+                            <span class="info-icon" title="Mean size of the core tumor (in micrometers)">ℹ️</span>
+                        </label>
+                        <input 
+                            type="number" 
+                            id="perimeter_mean" 
+                            name="perimeter_mean" 
+                            step="0.01" 
+                            min="0" 
+                            placeholder="e.g., 82.6" 
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="area_mean">
+                            Area Mean
+                            <span class="info-icon" title="Mean area of the nuclei (in square micrometers)">ℹ️</span>
+                        </label>
+                        <input 
+                            type="number" 
+                            id="area_mean" 
+                            name="area_mean" 
+                            step="0.01" 
+                            min="0" 
+                            placeholder="e.g., 547.0" 
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="smoothness_mean">
+                            Smoothness Mean
+                            <span class="info-icon" title="Local variation in radius lengths">ℹ️</span>
+                        </label>
+                        <input 
+                            type="number" 
+                            id="smoothness_mean" 
+                            name="smoothness_mean" 
+                            step="0.0001" 
+                            min="0" 
+                            placeholder="e.g., 0.098" 
+                            required
+                        >
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">🔍 Predict Diagnosis</button>
+                    <button type="reset" class="btn btn-secondary">↻ Clear Form</button>
+                </form>
+            </section>
+
+            <!-- Right Section: Results -->
+            <section class="result-section">
+                <h2>📊 Prediction Results</h2>
+                
+                <!-- Loading Spinner -->
+                <div id="loadingSpinner" class="loading-spinner" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Processing prediction...</p>
+                </div>
+
+                <!-- Result Box -->
+                <div id="resultBox" class="result-box" style="display: none;">
+                    <div id="diagnosisCard" class="diagnosis-card">
+                        <h3>Prediction Result</h3>
+                        <div id="diagnosisDisplay" class="diagnosis-display"></div>
+                        <p id="confidenceDisplay" class="confidence-text"></p>
+                    </div>
+
+                    <!-- Probability Breakdown -->
+                    <div class="probability-section">
+                        <h4>Probability Breakdown</h4>
+                        <div class="probability-item">
+                            <div class="probability-label">Benign</div>
+                            <div class="progress-bar">
+                                <div id="benignBar" class="progress-fill benign" style="width: 0%"></div>
+                            </div>
+                            <div id="benignProb" class="probability-value">0%</div>
+                        </div>
+
+                        <div class="probability-item">
+                            <div class="probability-label">Malignant</div>
+                            <div class="progress-bar">
+                                <div id="malignantBar" class="progress-fill malignant" style="width: 0%"></div>
+                            </div>
+                            <div id="malignantProb" class="probability-value">0%</div>
+                        </div>
+                    </div>
+
+                    <!-- Input Summary -->
+                    <div class="input-summary">
+                        <h4>Input Features Used</h4>
+                        <div id="inputSummary" class="summary-content"></div>
+                    </div>
+
+                    <div class="result-disclaimer">
+                        <strong>⚠️ Note:</strong> This prediction is for educational purposes only and should not be used for medical diagnosis.
+                    </div>
+                </div>
+
+                <!-- Error Message -->
+                <div id="errorBox" class="error-box" style="display: none;">
+                    <h3>❌ Error</h3>
+                    <p id="errorMessage"></p>
+                </div>
+
+                <!-- Initial State Message -->
+                <div id="initialMessage" class="initial-message">
+                    <p>👈 Fill in all fields and click "Predict Diagnosis" to see results</p>
+                </div>
+            </section>
+        </main>
+
+        <!-- Model Information Section -->
+        <section class="model-info">
+            <h3>📚 Model Information</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <strong>Algorithm:</strong>
+                    <span>Logistic Regression</span>
+                </div>
+                <div class="info-item">
+                    <strong>Dataset:</strong>
+                    <span>Breast Cancer Wisconsin (Diagnostic)</span>
+                </div>
+                <div class="info-item">
+                    <strong>Features Used:</strong>
+                    <span>5 selected features</span>
+                </div>
+                <div class="info-item">
+                    <strong>Model Persistence:</strong>
+                    <span>Joblib (.pkl)</span>
+                </div>
+                <div class="info-item">
+                    <strong>Prediction Classes:</strong>
+                    <span>Benign / Malignant</span>
+                </div>
+                <div class="info-item">
+                    <strong>Framework:</strong>
+                    <span>Flask + Scikit-learn</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>© 2026 Breast Cancer Prediction System | Educational Purpose Only</p>
+            <p>For educational and research purposes. Not for medical use.</p>
+        </footer>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        const form = document.getElementById('predictionForm');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const resultBox = document.getElementById('resultBox');
+        const errorBox = document.getElementById('errorBox');
+        const initialMessage = document.getElementById('initialMessage');
+
+        // Form submission handler
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Collect form data
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData);
+
+            // Validate inputs
+            for (let key in data) {
+                const value = parseFloat(data[key]);
+                if (isNaN(value) || value < 0) {
+                    showError(`Invalid value for ${key.replace('_', ' ')}`);
+                    return;
+                }
+            }
+
+            // Show loading spinner
+            loadingSpinner.style.display = 'flex';
+            resultBox.style.display = 'none';
+            errorBox.style.display = 'none';
+            initialMessage.style.display = 'none';
+
+            try {
+                // Send prediction request
+                const response = await fetch('/api/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    showError(result.error || 'Prediction failed');
+                    return;
+                }
+
+                // Display results
+                displayResults(result);
+
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            } finally {
+                loadingSpinner.style.display = 'none';
+            }
+        });
+
+        function displayResults(result) {
+            // Diagnosis display
+            const diagnosisDisplay = document.getElementById('diagnosisDisplay');
+            const diagnosisClass = result.diagnosis === 'Malignant' ? 'malignant' : 'benign';
+            diagnosisDisplay.className = `diagnosis-text ${diagnosisClass}`;
+            diagnosisDisplay.innerHTML = `<span class="diagnosis-emoji">${result.diagnosis === 'Malignant' ? '🔴' : '🟢'}</span> ${result.diagnosis}`;
+
+            // Confidence display
+            const confidenceDisplay = document.getElementById('confidenceDisplay');
+            confidenceDisplay.textContent = `Confidence: ${result.confidence.toFixed(2)}%`;
+
+            // Probability bars
+            document.getElementById('benignBar').style.width = result.benign_probability + '%';
+            document.getElementById('malignantBar').style.width = result.malignant_probability + '%';
+            document.getElementById('benignProb').textContent = result.benign_probability.toFixed(2) + '%';
+            document.getElementById('malignantProb').textContent = result.malignant_probability.toFixed(2) + '%';
+
+            // Input summary
+            const inputSummary = document.getElementById('inputSummary');
+            let summaryHTML = '';
+            for (let feature in result.input_features) {
+                const value = result.input_features[feature].toFixed(2);
+                summaryHTML += `<div class="summary-item"><strong>${feature.replace(/_/g, ' ')}:</strong> ${value}</div>`;
+            }
+            inputSummary.innerHTML = summaryHTML;
+
+            // Show result box
+            resultBox.style.display = 'block';
+            errorBox.style.display = 'none';
+            initialMessage.style.display = 'none';
+        }
+
+        function showError(message) {
+            document.getElementById('errorMessage').textContent = message;
+            errorBox.style.display = 'block';
+            resultBox.style.display = 'none';
+            initialMessage.style.display = 'none';
+            loadingSpinner.style.display = 'none';
+        }
+    </script>
+</body>
+</html>
