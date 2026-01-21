@@ -11,7 +11,6 @@ from flask import Flask, render_template, request, jsonify
 import joblib
 import numpy as np
 import os
-import sys
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -54,6 +53,24 @@ def load_model_and_scaler():
     except Exception as e:
         print(f"ERROR loading model: {str(e)}")
         return None, None
+
+
+def ensure_model_loaded():
+    """Ensure model and scaler are loaded, raising on failure."""
+    global model, scaler
+
+    if model is None or scaler is None:
+        model, scaler = load_model_and_scaler()
+
+    if model is None or scaler is None:
+        raise RuntimeError("Model loading failed. Check model artifacts and paths.")
+
+
+# Load model on startup (works for Gunicorn and Flask dev server)
+try:
+    ensure_model_loaded()
+except Exception as e:
+    print(f"CRITICAL: {str(e)}")
 
 
 @app.route('/')
@@ -204,6 +221,13 @@ def model_info():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/health', methods=['GET'])
+def health_check():
+    """Basic health check for Render."""
+    status = "ok" if model is not None and scaler is not None else "degraded"
+    return jsonify({"status": status}), 200
+
+
 @app.errorhandler(404)
 def not_found(error):
     """Handle 404 errors."""
@@ -217,21 +241,14 @@ def server_error(error):
 
 
 if __name__ == '__main__':
-    # Load model on startup
-    print("Loading model and scaler...")
-    model, scaler = load_model_and_scaler()
-    
-    if model is None or scaler is None:
-        print("CRITICAL: Model loading failed!")
-        sys.exit(1)
-    
     print("\n" + "="*60)
     print("Breast Cancer Prediction System - Flask Server")
     print("="*60)
-    print(f"Model: {type(model).__name__}")
+    if model is not None:
+        print(f"Model: {type(model).__name__}")
     print(f"Features: {', '.join(SELECTED_FEATURES)}")
-    print(f"Server starting at http://localhost:5000")
     print("="*60 + "\n")
-    
-    # Run Flask app
-    app.run(debug=True, host='0.0.0.0', port=5000)
+
+    # Run Flask app (for local development)
+    port = int(os.environ.get('PORT', '5000'))
+    app.run(debug=False, host='0.0.0.0', port=port)
